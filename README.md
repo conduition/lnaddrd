@@ -73,8 +73,8 @@ lnd:
 
 Launch `lnaddrd` by pointing it at the config file.
 
-```
-# lnaddrd /path/to/lnaddrd.yaml
+```console
+$ lnaddrd /path/to/lnaddrd.yaml
 2024/04/21 02:17:00.560533 starting server on 127.0.0.1:3441
 ```
 
