@@ -1,6 +1,6 @@
 # lnaddrd
 
-A self-hosted server to provide yourself with [a Lightning Address](https://lightningaddress.com/), by generating invoices from a remote [LND](https://github.com/lightningnetwork/lnd) instance.
+A self-hosted server to provide yourself with [a Lightning Address](https://lightningaddress.com/), by generating invoices from a remote [LND](https://github.com/lightningnetwork/lnd) instance. No third parties, at all. Just you, your machines, and your money.
 
 ## Install
 
