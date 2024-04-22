@@ -17,8 +17,12 @@ Change your lnaddrd's volume and lnd's volume according your config:
 
 build your docker container with :
 
-```docker compose build```
+```sh
+docker compose build
+```
 
 launch with
 
-```docker compose up -d```
+```sh
+docker compose up -d
+```
