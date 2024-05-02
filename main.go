@@ -12,16 +12,19 @@ import (
 )
 
 type LndConfig struct {
-	Host         string `yaml:"host"`
-	TlsCertFile  string `yaml:"tls_cert_file"`
-	MacaroonFile string `yaml:"macaroon_file"`
+	Host                 string `yaml:"host"`
+	TlsCertFile          string `yaml:"tls_cert_file"`
+	MacaroonFile         string `yaml:"macaroon_file"`
+	UnsafeAllowPlaintext bool   `yaml:"unsafe_allow_plaintext"`
 }
 
 func (cfg *LndConfig) Validate() error {
 	if cfg.Host == "" {
 		return errors.New("missing 'lnd.host' in config")
-	} else if cfg.TlsCertFile == "" {
-		return errors.New("missing 'lnd.tls_cert_file' in config")
+	} else if cfg.TlsCertFile == "" && !cfg.UnsafeAllowPlaintext {
+		return errors.New(
+			"missing 'lnd.tls_cert_file' in config; unsafe_allow_plaintext=true is required for plaintext transport",
+		)
 	} else if cfg.MacaroonFile == "" {
 		return errors.New("missing 'lnd.macaroon_file' in config")
 	}

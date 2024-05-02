@@ -62,21 +62,37 @@ func metadataArray(lightningAddress, shortDesc, pngBase64 string) json.RawMessag
 }
 
 func createLndClient(cfg *LndConfig) (*lnc.Lnd, error) {
-	tlsCertContent, err := os.ReadFile(cfg.TlsCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("error reading cert file %q: %w", cfg.TlsCertFile, err)
-	}
-	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM(tlsCertContent)
-	tlsConfig := &tls.Config{RootCAs: certPool}
-
 	macaroon, err := os.ReadFile(cfg.MacaroonFile)
 	if err != nil {
 		return nil, fmt.Errorf("error reading macaroon file %q: %w", cfg.MacaroonFile, err)
 	}
 
+	var (
+		tlsConfig *tls.Config
+		protocol  string
+	)
+
+	// To reach an LND instance running with `no-rest-tls=1`, use plaintext HTTP.
+	if cfg.TlsCertFile == "" && cfg.UnsafeAllowPlaintext {
+		log.Printf(
+			"WARNING: connecting to LND over plaintext HTTP; this exposes your macaroon " +
+				"credentials to middle-men. Use this only over an already-secure connection " +
+				"like a loopback address, or an SSH tunnel",
+		)
+		protocol = "http"
+	} else {
+		tlsCertContent, err := os.ReadFile(cfg.TlsCertFile)
+		if err != nil {
+			return nil, fmt.Errorf("error reading cert file %q: %w", cfg.TlsCertFile, err)
+		}
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM(tlsCertContent)
+		tlsConfig = &tls.Config{RootCAs: certPool}
+		protocol = "https"
+	}
+
 	lnd := &lnc.Lnd{
-		Host: &url.URL{Scheme: "https", Host: cfg.Host},
+		Host: &url.URL{Scheme: protocol, Host: cfg.Host},
 		Client: &http.Client{
 			Transport: &http.Transport{TLSClientConfig: tlsConfig},
 			Timeout:   15 * time.Second,
@@ -84,6 +100,7 @@ func createLndClient(cfg *LndConfig) (*lnc.Lnd, error) {
 		TlsConfig: tlsConfig,
 		Macaroon:  hex.EncodeToString(macaroon),
 	}
+
 	return lnd, nil
 }
 

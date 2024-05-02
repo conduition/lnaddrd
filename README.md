@@ -65,10 +65,14 @@ lightning_address_usernames: # optional
 #
 # Note that your LND certificate MUST have the 'host' field listed as a SAN.
 # (hint: use the 'tlsextradomain' option in lnd.conf)
+#
+# To reach an LND instance running with no-rest-tls,
+# set unsafe_allow_plaintext=true and omit the tls_cert_file parameter.
 lnd:
   host: conduition.io:8080                  # required
   macaroon_file: /path/to/invoices.macaroon # required
-  tls_cert_file: /path/to/lnd.tls.cert      # required
+  tls_cert_file: /path/to/lnd.tls.cert      # required unless unsafe_allow_plaintext=true
+  unsafe_allow_plaintext: false             # optional
 ```
 
 Launch `lnaddrd` by pointing it at the config file.
