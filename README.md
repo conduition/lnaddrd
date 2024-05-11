@@ -7,7 +7,7 @@ A self-hosted server to provide yourself with [a Lightning Address](https://ligh
 First, install the [Golang compiler](https://go.dev).
 
 ```sh
-curl -o - -sL https://go.dev/dl/go1.22.2.linux-amd64.tar.gz | tar xz -C /tmp
+curl -o - -sL https://go.dev/dl/go1.22.3.linux-amd64.tar.gz | tar xz -C /tmp
 sudo cp -r /tmp/go /usr/local
 echo 'export PATH="$PATH:/usr/local/go/bin"' >> ~/.bashrc
 export PATH="$PATH:/usr/local/go/bin"
