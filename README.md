@@ -17,7 +17,7 @@ go version # to confirm install success
 Now you can install `lnaddrd` from source:
 
 ```sh
-go install github.com/conduition/lnaddrd@latest
+CGO_ENABLED=0 go install github.com/conduition/lnaddrd@latest
 ```
 
 ## Usage
