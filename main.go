@@ -1,13 +1,18 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"gitlab.com/starius/encrypt-autocert-cache"
+	"golang.org/x/crypto/acme/autocert"
 	"gopkg.in/yaml.v3"
 )
 
@@ -35,6 +40,32 @@ type WebserverConfig struct {
 	BindAddress string `yaml:"bind_address"`
 	TlsCertFile string `yaml:"tls_cert_file"`
 	TlsKeyFile  string `yaml:"tls_key_file"`
+
+	// If specified, don't specify any bind_address, tls_cert_file, tls_key_file.
+	AutocertDomains []string `yaml:"autocert_domains"`
+	AutocertDir     string   `yaml:"autocert_dir"`
+}
+
+func (cfg *WebserverConfig) Validate() error {
+	if (cfg.AutocertDir != "") != (len(cfg.AutocertDomains) != 0) {
+		return errors.New("specify autocert_dir when autocert_domains is specified")
+	}
+
+	if len(cfg.AutocertDomains) != 0 {
+		if cfg.BindAddress != "" {
+			return errors.New("don't combine autocert_domains and bind_address")
+		}
+		if cfg.TlsCertFile != "" {
+			return errors.New("don't combine autocert_domains and tls_cert_file")
+		}
+		if cfg.TlsKeyFile != "" {
+			return errors.New("don't combine autocert_domains and tls_key_file")
+		}
+	} else if cfg.BindAddress == "" {
+		return errors.New("missing 'bind_address' in config")
+	}
+
+	return nil
 }
 
 type Config struct {
@@ -52,9 +83,11 @@ type Config struct {
 }
 
 func (cfg *Config) Validate() error {
-	if cfg.Webserver.BindAddress == "" {
-		return errors.New("missing 'bind_address' in config")
-	} else if cfg.Lnurl.UrlAuthority == "" {
+	if err := cfg.Webserver.Validate(); err != nil {
+		return err
+	}
+
+	if cfg.Lnurl.UrlAuthority == "" {
 		return errors.New("missing 'url_authority' in config")
 	} else if cfg.Lnurl.IconFile == "" {
 		return errors.New("missing 'icon_file' in config")
@@ -89,6 +122,14 @@ func ReadConfigFile(cfgPath string) (*Config, error) {
 	return &cfg, nil
 }
 
+func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
+	url := "https://" + r.Host + r.URL.Path
+	if len(r.URL.RawQuery) > 0 {
+		url += "?" + r.URL.RawQuery
+	}
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
 func StartServer(cfg *WebserverConfig, mux http.Handler) error {
 	server := http.Server{
 		Addr:           cfg.BindAddress,
@@ -96,6 +137,39 @@ func StartServer(cfg *WebserverConfig, mux http.Handler) error {
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1mb
+	}
+
+	if len(cfg.AutocertDomains) != 0 {
+		log.Printf("Starting server on ports 443 and 80, using autocert domains %v.", cfg.AutocertDomains)
+
+		cache := autocert.DirCache(cfg.AutocertDir)
+		manager := &autocert.Manager{
+			Cache:      cache,
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(cfg.AutocertDomains...),
+		}
+
+		certHandler := manager.HTTPHandler(http.HandlerFunc(redirectToHTTPS))
+		tlsConfig := manager.TLSConfig()
+		tlsConfig.MinVersion = tls.VersionTLS12
+		tcpLis, err := net.Listen("tcp", ":443")
+		if err != nil {
+			return fmt.Errorf("failed to listen on port 443: %w", err)
+		}
+		lis, err := encrypt.NewListener(tlsConfig, tcpLis)
+		if err != nil {
+			return fmt.Errorf("failed to create listener: %w", err)
+		}
+
+		errChan := make(chan error)
+		go func() {
+			errChan <- http.ListenAndServe(":80", certHandler)
+		}()
+		go func() {
+			errChan <- server.Serve(lis)
+		}()
+
+		return <-errChan
 	}
 
 	log.Printf("starting server on %s", cfg.BindAddress)

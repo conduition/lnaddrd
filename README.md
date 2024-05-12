@@ -31,9 +31,18 @@ To configure `lnaddrd`, create a YAML file:
 # By default it serves unencrypted HTTP. Specify a TLS cert+key to serve
 # clients over HTTPS instead.
 webserver:
-  bind_address: 127.0.0.1:3441              # required
+  bind_address: 127.0.0.1:3441              # required if autocert is not used
   # tls_cert_file: /path/to/server.tls.cert # optional
   # tls_key_file: /path/to/server.tls.key   # optional
+
+  # If you want to use autocert to generate HTTPS certificate automatically
+  # using LetsEncrypt and store it for you, uncomment two following options
+  # and comment out bind_address (it will run on 443 and 80 ports).
+  # autocert_domains:
+  #  - conduition.io
+  # autocert_dir: /path/to/autocert-cache-dir
+
+
 
 lnurl:
   # This must be the base URL of your server.
