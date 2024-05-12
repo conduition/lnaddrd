@@ -26,7 +26,9 @@ func replyJson(res http.ResponseWriter, value any) {
 	jsonData, _ := json.Marshal(value)
 	res.Header().Set("Content-Type", "application/json")
 	res.Header().Set("Content-Length", strconv.Itoa(len(jsonData)))
-	res.Write(jsonData)
+	if _, err := res.Write(jsonData); err != nil {
+		log.Printf("Failed to write HTTP response JSON: %v.", err)
+	}
 }
 
 func openIconFileAndConvertToPngBase64(iconFilePath string) (string, error) {
