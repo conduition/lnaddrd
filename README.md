@@ -7,7 +7,7 @@ A self-hosted server to provide yourself with [a Lightning Address](https://ligh
 First, install the [Golang compiler](https://go.dev).
 
 ```sh
-curl -o - -sL https://go.dev/dl/go1.22.2.linux-amd64.tar.gz | tar xz -C /tmp
+curl -o - -sL https://go.dev/dl/go1.22.3.linux-amd64.tar.gz | tar xz -C /tmp
 sudo cp -r /tmp/go /usr/local
 echo 'export PATH="$PATH:/usr/local/go/bin"' >> ~/.bashrc
 export PATH="$PATH:/usr/local/go/bin"
@@ -17,7 +17,7 @@ go version # to confirm install success
 Now you can install `lnaddrd` from source:
 
 ```sh
-go install github.com/conduition/lnaddrd@latest
+CGO_ENABLED=0 go install github.com/conduition/lnaddrd@latest
 ```
 
 ## Usage
@@ -31,9 +31,18 @@ To configure `lnaddrd`, create a YAML file:
 # By default it serves unencrypted HTTP. Specify a TLS cert+key to serve
 # clients over HTTPS instead.
 webserver:
-  bind_address: 127.0.0.1:3441              # required
+  bind_address: 127.0.0.1:3441              # required if autocert is not used
   # tls_cert_file: /path/to/server.tls.cert # optional
   # tls_key_file: /path/to/server.tls.key   # optional
+
+  # If you want to use autocert to generate HTTPS certificate automatically
+  # using LetsEncrypt and store it for you, uncomment two following options
+  # and comment out bind_address (it will run on 443 and 80 ports).
+  # autocert_domains:
+  #  - conduition.io
+  # autocert_dir: /path/to/autocert-cache-dir
+
+
 
 lnurl:
   # This must be the base URL of your server.
