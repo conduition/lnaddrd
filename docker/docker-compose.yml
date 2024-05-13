@@ -1,0 +1,12 @@
+services:
+  lnaddrd:
+    container_name: lnaddrd
+    restart: always
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - 3441:3441
+    volumes:
+      - /your/volume/lnaddrd:/usr/share/lnaddrd:ro
+      - /your/volume/lnd:/usr/share/lnd:ro

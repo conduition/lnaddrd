@@ -1,0 +1,42 @@
+# This configures how the webserver will bind and expose its HTTP stack.
+# By default it serves unencrypted HTTP. Specify a TLS cert+key to serve
+# clients over HTTPS instead.
+webserver:
+  bind_address: 0.0.0.0:3441              # required
+  # tls_cert_file: /path/to/server.tls.cert # optional
+  # tls_key_file: /path/to/server.tls.key   # optional
+
+lnurl:
+  # This must be the base URL of your server.
+  url_authority: https://conduition.io # required
+
+  # Both of these will be included in the pay request metadata array.
+  # The icon_file can be either a PNG or a JPEG file.
+  short_description: "Donation to conduition" # optional
+  icon_file: /usr/share/lnaddrd/icon.png                # required
+
+  # Determines the range of acceptable payment amounts.
+  max_pay_request_sats: 5000000000 # required
+  min_pay_request_sats: 100       # required
+
+  # Determines the expiry time of BOLT11 invoices we create.
+  # Defaults to whatever the remote LND instance uses by default.
+  invoice_expiry: "1h" # optional
+  # invoice_expiry: "20m"
+  # invoice_expiry: "100s"
+
+# Accept lightning address requests for the following usernames.
+lightning_address_usernames: # optional
+  - conduition
+
+# Configure a connection to LND's REST API.
+#
+# You can find invoices.macaroon in:     ~/.lnd/data/chain/bitcoin/mainnet/invoices.macaroon
+# You can find LND's TLS certificate in: ~/.lnd/tls.cert
+#
+# Note that your LND certificate MUST have the 'host' field listed as a SAN.
+# (hint: use the 'tlsextradomain' option in lnd.conf)
+lnd:
+  host: conduition.io:8080                  # required
+  macaroon_file: /usr/share/lnd/data/chain/bitcoin/mainnet/invoices.macaroon # required
+  tls_cert_file: /usr/share/lnd/tls.cert      # required
