@@ -122,8 +122,8 @@ func CreateMux(cfg *Config) (*http.ServeMux, error) {
 		return nil, err
 	}
 
-	lnd, err := createLndClient(&cfg.Lnd)
-	if err != nil {
+	// Check the config file is sound first
+	if _, err = createLndClient(&cfg.Lnd); err != nil {
 		return nil, err
 	}
 
@@ -160,6 +160,18 @@ func CreateMux(cfg *Config) (*http.ServeMux, error) {
 					replyJson(res, map[string]string{
 						"status": "ERROR",
 						"reason": "amount is out of acceptable range",
+					})
+					return
+				}
+
+				// We load the LND config data dynamically for each new request
+				// in case the macaroon or TLS cert have changed.
+				lnd, err := createLndClient(&cfg.Lnd)
+				if err != nil {
+					res.WriteHeader(http.StatusInternalServerError)
+					replyJson(res, map[string]string{
+						"status": "ERROR",
+						"reason": fmt.Sprintf("error creating LND client: %s", err),
 					})
 					return
 				}
